@@ -46,7 +46,7 @@ class Grid:
 
 class RoomEnvironment(gym.Env):
     """
-    Custom Gym environment representing a room-based environment.
+    Custom Gym environment representing a maze with grid-like rooms.
     """
     def __init__(
         self,
@@ -66,7 +66,7 @@ class RoomEnvironment(gym.Env):
 
         Parameters:
         - n_init_states: Number of states in the initial maze (without rooms).
-        - branching_rate: Rate at which the maze branches (new intersections).
+        - branching_rate: Rate at which the maze branches (probability of creating a new intersection when adding a state).
         - room_size: Size of the border each room (rooms are squares of shape room_size x room_size).
         - p_room: Probability of a room being created.
         - p_sink: Probability of a room being a sink.
@@ -168,13 +168,13 @@ class RoomEnvironment(gym.Env):
         node_rooms = self.compute_node_properties()
         node_colors = [self.room_colors[node_rooms[i]] for i in range(self.n_tot_states)]
         node_sizes = [700/np.sqrt(self.n_tot_states)] * self.n_tot_states
-        base_colors = ['gray'] * self.g.number_of_edges()
 
         # Highlight the current state
         node_colors[self.state] = 'red'
         node_sizes[self.state] *= 2
 
         # Prepare edge colors
+        base_colors = ['gray'] * self.g.number_of_edges()
         edge_list = list(self.g.edges())
         edge_width = 7.0/np.sqrt(self.n_tot_states)
 
