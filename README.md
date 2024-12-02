@@ -1,7 +1,7 @@
 # Merits of curiosity
 Code used in the study : https://doi.org/10.31234/osf.io/evm9n 
 
-## How to use
+## How to use
 
 You can clone this repository and install the dependencies with `pip3`:
 
