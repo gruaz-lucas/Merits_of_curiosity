@@ -2,6 +2,8 @@
 Code used in the study : https://doi.org/10.31234/osf.io/evm9n 
 
 If you use this code in your research or projects, please cite the following paper:
+
+```
 @article{gruaz_modirshanechi_becker_brea_2024, 
   title={Merits of curiosity: a simulation study}, 
   DOI={https://doi.org/10.31234/osf.io/evm9n}, 
@@ -9,6 +11,7 @@ If you use this code in your research or projects, please cite the following pap
   year={2024}, 
   month={Sep} 
 }
+```
 
 If you have questions about the code, please contact Lucas Gruaz: lucas.gruaz@epfl.ch
 
