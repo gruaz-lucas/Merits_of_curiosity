@@ -351,15 +351,16 @@ class RoomEnvironment(gym.Env):
             self.grids[i].is_stoc = True
         return
 
-    def add_random_edges(self, from_nodes, to_nodes, n_e):
+    def add_random_edges(self, from_nodes, to_nodes, n_e, max_tries = 10000):
         """
         Add random edges from a given set of nodes to another set of nodes.
         """
         n_added = 0
         added_edges = []
+        i = 0
 
         # Add edges until the required number is reached
-        while n_added < n_e:
+        while n_added < n_e and i < max_tries:
             sour = random.choice(from_nodes)
             dest = random.choice(to_nodes)
 
@@ -368,7 +369,9 @@ class RoomEnvironment(gym.Env):
                 self.g.add_edge(sour, dest)
                 added_edges.append((sour, dest))
                 n_added += 1
-
+            i += 1
+        if i >= max_tries:
+            raise ValueError(f"Could not add {n_e} edges after {max_tries} tries.")
         return added_edges
 
     def add_sink_source(self):
