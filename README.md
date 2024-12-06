@@ -30,9 +30,12 @@ Then, to run a script:
 ```
 scripts/env_generation_example.py
 ```
+<<<<<<< HEAD
 
 or 
 
 ```
 scripts/run_agent_example.py
 ```
+=======
+>>>>>>> 9e86f1c6feea2a7d9443ef5a06d351194a9a214a
