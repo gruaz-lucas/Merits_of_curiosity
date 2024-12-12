@@ -119,7 +119,7 @@ class ModelBasedAgent():
             ΔV = V[s_prime] - U[s_prime]
             
             # Check stopping condition
-            if abs(ΔV) / abs(np.max(V) - np.min(V)) <= ΔV_thresh:
+            if np.max(V) != np.min(V) and abs(ΔV) / abs(np.max(V) - np.min(V)) <= ΔV_thresh:
                 break
 
             U[s_prime] = V[s_prime] # Update U-value
