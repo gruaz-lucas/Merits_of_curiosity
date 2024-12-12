@@ -34,5 +34,5 @@ scripts/env_generation_example.py
 or 
 
 ```
-scripts/run_agent_example.py
+scripts/run_single_agent_verbose.py
 ```
