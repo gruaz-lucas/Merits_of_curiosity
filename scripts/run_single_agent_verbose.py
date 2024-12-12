@@ -1,11 +1,11 @@
 import random
 import numpy as np
-from src import RoomEnvironment, NoveltyAgent, SurpriseAgent, RandomAgent, InformationGainAgent, EmpowermentAgent, Performance
+from src import RoomEnvironment, NoveltyAgent, SurpriseAgent, RandomAgent, InformationGainAgent, EmpowermentAgent, Simulator
 
 
-# ------------------------------------------------------------------------------
-# The script below to run an agent in the environment and compute performance
-# ------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------
+# The script below to run an agent in an environment and print performance regularly
+# ----------------------------------------------------------------------------------
 
 seed = None
 
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     )
     
     # Instantiate the agent with specified parameters
-    agent = InformationGainAgent(
+    agent = RandomAgent(
         n_states=env.n_tot_states,
         n_actions_per_state=env.n_actions_per_state,
         ε=1/env.n_tot_states,
@@ -37,16 +37,15 @@ if __name__ == "__main__":
         βe=0.0,
         λe=0.0,
         T_PS=50,
-        model_fixed=False,
-        r0=0.0
+        model_fixed=False
     )
     
-    # Instantiate the performance measure
-    performance = Performance(
+    # Instantiate the simulator
+    simulator = Simulator(
         measure_type='state_discovery',
         n_iter=1000,
         eval_every=50,
-        verbose=True
+        verbose=True # Set to True to print performance at each evaluation
     )
 
     # Reset the environment to start a new episode
@@ -54,7 +53,7 @@ if __name__ == "__main__":
     print(f"Initial state: {obs['state']}")
 
     # Run the agent in the environment and measure performance
-    perfs = performance.measure_performance(agent, env)
+    perfs = simulator.measure_performance(agent, env)
     
     print(f"Average performance: {np.mean(perfs)}")
     

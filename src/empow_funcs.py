@@ -4,6 +4,7 @@ import numpy as np
 # Functions used for the Blahut-Arimoto algorithm
 # See https://en.wikipedia.org/wiki/Blahut-Arimoto_algorithm
 # ------------------------------------------------------------------------------
+    
 def func_blahut_arimoto(P_YX, thresh=1e-6, max_iter=100, pass_all=False):
     """
     Blahut-Arimoto algorithm to compute the capacity of a discrete memoryless channel.
@@ -21,65 +22,57 @@ def func_blahut_arimoto(P_YX, thresh=1e-6, max_iter=100, pass_all=False):
     - c: if pass_all is False, scalar capacity value
          if pass_all is True, list of capacity values at each iteration
     """
-    N, M = P_YX.shape  # N: size of alphabet x (number of actions)
-                       # M: size of alphabet y (number of states)
+    N, M = P_YX.shape
 
-    # Initialization of r (prior policy)
-    r_list = [np.ones(N) / N]
+    # Initialize probabilities and auxiliary variables
+    r = np.ones(N) / N
+    r_list = [r.copy()] if pass_all else None
     c_list = [0.0]
 
-    # Initialize qi and ri
     qi = np.zeros((M, N))
-    ri = np.zeros(N)
-
-    # Auxiliary variables
-    inds = np.zeros(M, dtype=bool)
     logr = np.zeros(N)
 
-    for iteration in range(max_iter):
-        r = r_list[-1]
-
+    for _ in range(max_iter):
         # Update qi
-        for m in range(M):
-            qi[m, :] = r * P_YX[:, m]
-            if np.sum(qi[m, :]) == 0:
-                qi[m, :] = 1.0 / N
-            else:
-                qi[m, :] /= np.sum(qi[m, :])
+        qi = r * P_YX.T
+        row_sums = np.sum(qi, axis=1, keepdims=True)
+        nonzero_mask = row_sums.squeeze() != 0  # Correctly reduce dimensions for masking
 
-        # Update ri
-        for n in range(N):
-            inds = qi[:, n] != 0
-            ri_numerator = qi[inds, n] ** P_YX[n, inds]
-            ri[n] = np.prod(ri_numerator)
+        # Divide only where row_sums are non-zero, use broadcasting
+        qi[nonzero_mask] /= row_sums[nonzero_mask]
 
-        ri /= np.sum(ri)  # Normalize ri
+        # Set uniform distribution where row_sums is zero
+        qi[~nonzero_mask] = 1.0 / N
 
-        # Compute tolerance to check for convergence
-        tolerance = np.sum((ri - r) ** 2)
+        # Update ri using a more vectorized approach
+        ri = np.prod(np.power(qi.T, P_YX) * (qi.T != 0), axis=1)
+        ri /= np.sum(ri)
 
+        # Compute tolerance
+        tolerance = np.linalg.norm(ri - r) # L2 norm
+
+        # Handling results for each iteration
         if pass_all:
             r_list.append(ri.copy())
             c_list.append(func_capacity(P_YX, ri, qi))
         else:
-            r_list[0] = ri.copy()
+            r = ri
 
-            # Compute capacity c
-            for n in range(N):
-                inds = P_YX[n, :] != 0
-                numerator = qi[inds, n]
-                denominator = ri[n]
-                logr[n] = np.sum(P_YX[n, inds] * np.log(numerator / denominator))
+        # Compute capacity c
+        if not pass_all:
+            with np.errstate(divide='ignore', invalid='ignore'):
+                logr = np.sum(P_YX * np.log(qi.T / ri[:, np.newaxis]), axis=1)
             c_list[0] = np.sum(ri * logr)
 
         # Check for convergence
+        r = ri
         if tolerance < thresh:
             break
 
     if pass_all:
         return r_list, c_list
     else:
-        return r_list[0], c_list[0]
+        return r, c_list[0]
 
 def func_capacity(P_YX, r, q):
     """
@@ -101,44 +94,19 @@ def func_capacity(P_YX, r, q):
         q_inds_n = q[inds, n]
         logr[n] = np.sum(P_YX_n_inds * np.log(q_inds_n / r[n]))
     c = np.sum(r * logr)
-    return c
-
-def func_capacity_alternative(P_YX, r):
-    """
-    Alternative method to compute capacity.
-
-    Parameters:
-    - P_YX: numpy array of shape (N, M)
-    - r: numpy array of shape (N,)
-
-    Returns:
-    - c: capacity value (scalar)
-    """
-    N, M = P_YX.shape
-    P_Y = np.dot(r, P_YX)  # Marginal probability of y
-    inds_P_Y = P_Y != 0
-    H_Y = -np.sum(P_Y[inds_P_Y] * np.log(P_Y[inds_P_Y]))  # Entropy H(Y)
-
-    H_YX = np.zeros(N)
-    for n in range(N):
-        P_YX_n = P_YX[n, :]
-        inds_P_YX_n = P_YX_n != 0
-        H_YX[n] = -np.sum(P_YX_n[inds_P_YX_n] * np.log(P_YX_n[inds_P_YX_n]))  # Entropy H(Y|X=n)
-    H_YX_total = np.sum(r * H_YX)  # Weighted sum over r
-
-    c = H_Y - H_YX_total
+   
     return c
 
 # ------------------------------------------------------------------------------
 # Empowerment
 # ------------------------------------------------------------------------------
-def func_R_sas_Empow(agent, sp, test_if_sp_dep=False, test_if_limited_2_sa=False, thresh=1e-6, max_iter=100):
+def func_R_sas_Empow(agent, sp, test_if_sp_dep=False, test_if_limited_2_sa=False, thresh=1e-10, max_iter=100):
     """
     Compute the empowerment of state sp as the intrinsic reward of transition for (s, a) → sp.
 
     Parameters:
-    - agent: object that must have attributes 'n_actions_per_state' and 'Phat_sa_s'
-    - sp: integer, the index of the state sp
+    - agent: object that must have attributes 'n_actions_per_state' and 'T'
+    - sp: integer, the index of the state s'
     - test_if_sp_dep: if True, returns True to indicate the reward depends on sp
     - test_if_limited_2_sa: if True, returns True to indicate the reward should be updated only for (s_t, a_t)
     - thresh: convergence threshold for Blahut-Arimoto algorithm
@@ -161,4 +129,5 @@ def func_R_sas_Empow(agent, sp, test_if_sp_dep=False, test_if_limited_2_sa=False
 
     # Compute the capacity using Blahut-Arimoto algorithm
     r, c = func_blahut_arimoto(P_YX, thresh=thresh, max_iter=max_iter, pass_all=False)
+    
     return c  # Return the capacity as the empowerment

@@ -60,6 +60,7 @@ class RoomEnvironment(gym.Env):
         n_edges_per_sink,
         n_edges_per_source,
         uncontrollability,
+        seed = None
     ):
         """
         Initializes the RoomEnvironment.
@@ -111,7 +112,7 @@ class RoomEnvironment(gym.Env):
         self.fig, self.ax, self.img = None, None, None
 
         # Initialize the environment
-        self.reset()
+        self.reset(seed=seed)
 
     def reset(self, seed=None):
         """
